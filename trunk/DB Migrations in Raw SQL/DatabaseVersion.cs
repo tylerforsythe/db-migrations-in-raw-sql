@@ -18,26 +18,40 @@ namespace DB_Migrations_in_Raw_SQL
             dbConnection.Open();
         }
 
-        public void ExecuteScriptFileAtPath(string scriptPath) {
+        public string ExecuteScriptFileAtPath(string scriptPath) {
             EnsureDbConnection();
-            
-            //wrap each script in transaction. If no error, commit and record script as run in the DatabaseVersion table
+            StringBuilder resultString = new StringBuilder(500);
+            //wrap each script in a transaction.
             SqlTransaction transaction = dbConnection.BeginTransaction();
 
-            try {
-                SqlCommand command = dbConnection.CreateCommand();
-                command.Transaction = transaction;
-                command.CommandType = System.Data.CommandType.Text;
-                command.CommandText = File.ReadAllText(scriptPath);
-                command.ExecuteNonQuery();
-            }
-            catch (Exception e) {
-                transaction.Rollback();
-                throw e;
+            string[] fileLines = File.ReadAllLines(scriptPath);
+            StringBuilder sb = new StringBuilder(2000);
+
+            foreach (string line in fileLines) {
+                if (line.ToUpper().Trim() == "GO") {
+                    try {
+                        SqlCommand command = dbConnection.CreateCommand();
+                        command.Transaction = transaction;
+                        command.CommandType = System.Data.CommandType.Text;
+                        command.CommandText = sb.ToString();
+                        int resultCount = command.ExecuteNonQuery();
+                        resultString.AppendLine(string.Format("{0} rows affected.", resultCount));
+                    }
+                    catch (Exception e) {
+                        transaction.Rollback();
+                        throw e;
+                    }
+                    sb.Clear();
+                }
+                else {
+                    sb.AppendLine(line);
+                }
             }
 
             SaveExecutionToDBVersionTable(scriptPath, transaction);
             transaction.Commit();
+
+            return resultString.ToString();
         }
 
         private void SaveExecutionToDBVersionTable(string scriptPath, SqlTransaction transaction) {
