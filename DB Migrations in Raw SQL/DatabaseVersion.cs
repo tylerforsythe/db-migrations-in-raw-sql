@@ -22,24 +22,33 @@ namespace DB_Migrations_in_Raw_SQL
             EnsureDbConnection();
             StringBuilder resultString = new StringBuilder(500);
             //wrap each script in a transaction.
-            SqlTransaction transaction = dbConnection.BeginTransaction();
+            //SqlTransaction transaction = dbConnection.BeginTransaction();
 
             string[] fileLines = File.ReadAllLines(scriptPath);
             StringBuilder sb = new StringBuilder(2000);
 
-            foreach (string line in fileLines) {
-                if (line.ToUpper().Trim() == "GO") {
+            for (int i=0; i < fileLines.Length; ++i) {
+                string line = fileLines[i];
+                if (line.ToUpper().Trim() == "GO" || i == fileLines.Length - 1) {
                     try {
+                        if (i == fileLines.Length - 1)
+                            sb.AppendLine(line);
+                        if (sb.ToString().Trim().Length == 0) {
+                            sb.Clear();
+                            continue;
+                        }
                         SqlCommand command = dbConnection.CreateCommand();
-                        command.Transaction = transaction;
+                        command.CommandTimeout = 5 * 60;//5 minute timeout per chunk of script
+                        //command.Transaction = transaction;
                         command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = sb.ToString();
+                        command.CommandText = sb.ToString() + Environment.NewLine + Environment.NewLine;
                         int resultCount = command.ExecuteNonQuery();
                         resultString.AppendLine(string.Format("{0} rows affected.", resultCount));
                     }
                     catch (Exception e) {
-                        transaction.Rollback();
-                        throw e;
+                        //transaction.Rollback();
+                        Exception ex = new Exception(sb.ToString() + " ----- " + e.Message);
+                        throw ex;
                     }
                     sb.Clear();
                 }
@@ -48,22 +57,22 @@ namespace DB_Migrations_in_Raw_SQL
                 }
             }
 
-            SaveExecutionToDBVersionTable(scriptPath, transaction);
-            transaction.Commit();
+            SaveExecutionToDBVersionTable(scriptPath);
+            //transaction.Commit();
 
             return resultString.ToString();
         }
 
-        private void SaveExecutionToDBVersionTable(string scriptPath, SqlTransaction transaction) {
+        private void SaveExecutionToDBVersionTable(string scriptPath) {
             SqlCommand versionCommand = dbConnection.CreateCommand();
-            versionCommand.Transaction = transaction;
+            //versionCommand.Transaction = transaction;
             versionCommand.CommandType = System.Data.CommandType.Text;
             versionCommand.CommandText = string.Format(
                 "INSERT INTO DatabaseVersion (ScriptName, RunTimestamp) VALUES ('{0}', {1})",
                 Path.GetFileName(scriptPath), "GETDATE()");
             int versionRows = versionCommand.ExecuteNonQuery();
             if (versionRows != 1) {
-                transaction.Rollback();
+                //transaction.Rollback();
                 throw new Exception("DatabaseVersion INSERT rows was not 1.");
             }
         }
