@@ -125,9 +125,23 @@ namespace DB_Migrations_in_Raw_SQL
                 progressBarMigrations.Maximum = scriptsToRun.Count;
                 //execute scripts until complete or error
                 foreach (string scriptPath in scriptsToRun) {
+                    bool success = true;
+                    Exception whatWeGot = null;
                     txtLog.Text += string.Format("Executing {0}{1}", scriptPath, Environment.NewLine);
-                    dbVersion.ExecuteScriptFileAtPath(scriptPath);
-                    txtLog.Text += string.Format("Success!{0}", Environment.NewLine);
+                    try {
+                        dbVersion.ExecuteScriptFileAtPath(scriptPath);
+                    }
+                    catch (Exception ex) {
+                        success = false;
+                        whatWeGot = ex;
+                    }
+                    if (success) {
+                        txtLog.Text += string.Format("Success!{0}", Environment.NewLine);
+                    }
+                    else {
+                        txtLog.Text += string.Format("FAILED ON {1}!{0}", Environment.NewLine, scriptPath);
+                        throw whatWeGot;
+                    }
                     progressBarMigrations.Value += 1;
                 }
             }
