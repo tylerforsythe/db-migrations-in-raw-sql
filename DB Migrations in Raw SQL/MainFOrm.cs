@@ -18,6 +18,7 @@ namespace DB_Migrations_in_Raw_SQL
     {
         string WebConfigPath = string.Empty;
         bool ValidDB = false;
+        bool ForceClose = false;
 
         public MainForm(string[] args) {
             InitializeComponent();
@@ -31,31 +32,48 @@ namespace DB_Migrations_in_Raw_SQL
                 lblWebConfigPath.Text = "Web.config file path: " + WebConfigPath;
                 ValidDB = true;
             }
-        }
 
-        private string FindWebConfig(string[] args) {
-            if (args == null || args.Length == 0) {
-                //try to locate a web.config as if we are in a S#arp Lite project
-                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                AddLogLine("This path: " + path);
-
-                path = SeekUpUntilPathOrLimit(path, 10);
-
-                if (!string.IsNullOrEmpty(path)) {
-                    AddLogLine("Web directory found: " + path);
-                    path = Path.Combine(path, "Web.config");
-                    if (File.Exists(path))
-                        return path;
-                }
-            }
-            else {
-                string checkPath = args[0];
-                if (!string.IsNullOrEmpty(checkPath)) {
-                    if (File.Exists(checkPath)) {
-                        return checkPath;
+            if (args != null && args.Length > 0) {
+                foreach (string arg in args) {
+                    if (arg == "runmigrations") {
+                        RunMigrations(true, true);
                     }
                 }
             }
+        }
+        protected override void OnShown(EventArgs e) {
+            base.OnShown(e);
+            if (ForceClose) {
+                Close();
+                Application.Exit();
+            }
+        }
+
+        private string FindWebConfig(string[] args) {
+            //first try to extract the path from args
+            if (args != null && args.Length > 0) {
+                foreach (string checkPath in args) {;
+                    if (!string.IsNullOrEmpty(checkPath)) {
+                        if (File.Exists(checkPath)) {
+                            return checkPath;
+                        }
+                    }
+                }
+            }
+
+            //try to locate a web.config as if we are in a S#arp Lite project
+            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            AddLogLine("This path: " + path);
+
+            path = SeekUpUntilPathOrLimit(path, 10);
+
+            if (!string.IsNullOrEmpty(path)) {
+                AddLogLine("Web directory found: " + path);
+                path = Path.Combine(path, "Web.config");
+                if (File.Exists(path))
+                    return path;
+            }
+
             return string.Empty;
         }
 
@@ -83,6 +101,10 @@ namespace DB_Migrations_in_Raw_SQL
         }
 
         private void btnRunMigrations_Click(object sender, EventArgs e) {
+            RunMigrations(false, false);
+        }
+
+        private void RunMigrations(bool silent, bool exitWhenDone) {
             if (!ValidDB) {
                 txtLog.Text = "Invalid web.config path!";
                 return;
@@ -108,19 +130,31 @@ namespace DB_Migrations_in_Raw_SQL
             scriptsToRun.Sort();
 
             if (scriptsToRun.Count == 0) {
-                MessageBox.Show("Your database is up to date!", "DB Up To Date", MessageBoxButtons.OK);
+                if (!silent) {
+                    MessageBox.Show("Your database is up to date!", "DB Up To Date", MessageBoxButtons.OK);
+                }
                 dbVersion.Dispose();
-                return;
+                if (exitWhenDone)
+                    ForceClose = true;
+                else
+                    return;
             }
 
-            StringBuilder sb = new StringBuilder(300);
-            sb.AppendLine("Would you like to run these scripts?");
-            foreach (string scriptName in scriptsToRun)
-                sb.AppendLine(scriptName);
-
             //confirm list with user and ask before executing!
-            DialogResult result = MessageBox.Show(sb.ToString(), "", MessageBoxButtons.YesNo);
-            if (result == System.Windows.Forms.DialogResult.Yes) {
+            bool shouldContinue = false;
+            if (silent) {
+                shouldContinue = true;
+            }
+            else {
+                StringBuilder sb = new StringBuilder(300);
+                sb.AppendLine("Would you like to run these scripts?");
+                foreach (string scriptName in scriptsToRun)
+                    sb.AppendLine(scriptName);
+                DialogResult result = MessageBox.Show(sb.ToString(), "", MessageBoxButtons.YesNo);
+                shouldContinue = (result == System.Windows.Forms.DialogResult.Yes);
+            }
+
+            if (shouldContinue) {
                 progressBarMigrations.Value = 0;
                 progressBarMigrations.Maximum = scriptsToRun.Count;
                 //execute scripts until complete or error
@@ -140,7 +174,9 @@ namespace DB_Migrations_in_Raw_SQL
                     }
                     else {
                         txtLog.Text += string.Format("FAILED ON {1}!{0}", Environment.NewLine, scriptPath);
-                        throw whatWeGot;
+                        txtLog.Text += string.Format("Exception details: {1} {2} {0}", Environment.NewLine, whatWeGot.Message, whatWeGot.StackTrace);
+                        dbVersion.Dispose();
+                        return;
                     }
                     progressBarMigrations.Value += 1;
                 }
@@ -150,6 +186,9 @@ namespace DB_Migrations_in_Raw_SQL
             }
 
             dbVersion.Dispose();
+
+            if (exitWhenDone)
+                ForceClose = true;
         }
 
         private List<string> ReadScriptListFromFileSystem() {

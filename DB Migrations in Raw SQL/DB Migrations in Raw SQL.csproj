@@ -9,7 +9,7 @@
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DB_Migrations_in_Raw_SQL</RootNamespace>
-    <AssemblyName>DB Migrations in Raw SQL</AssemblyName>
+    <AssemblyName>SqlMigrations</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
