@@ -52,7 +52,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DatabaseVersion.cs" />
-    <Compile Include="DesignByContract.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
