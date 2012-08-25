@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Data.SqlClient;
-using DesignByContract;
 using System.IO;
 
 namespace DB_Migrations_in_Raw_SQL
@@ -38,7 +37,7 @@ namespace DB_Migrations_in_Raw_SQL
                             continue;
                         }
                         SqlCommand command = dbConnection.CreateCommand();
-                        command.CommandTimeout = 5 * 60;//5 minute timeout per chunk of script
+                        command.CommandTimeout = 20 * 60;//10 minute timeout per chunk of script
                         //command.Transaction = transaction;
                         command.CommandType = System.Data.CommandType.Text;
                         command.CommandText = sb.ToString() + Environment.NewLine + Environment.NewLine;
@@ -102,7 +101,8 @@ namespace DB_Migrations_in_Raw_SQL
             command.CommandText = tableCreateQuery;
             command.ExecuteNonQuery();
 
-            Check.Require(DoesTableExist(), "Table did not create successfully.");
+            if (!DoesTableExist())
+                throw new Exception("Table did not create successfully.");
         }
 
         public List<string> WhichScriptsHaveNotBeenRun(List<string> fullListOfPotentials) {
@@ -125,8 +125,10 @@ namespace DB_Migrations_in_Raw_SQL
 
 
         private void EnsureDbConnection() {
-            Check.Require(dbConnection != null, "dbConnection is null");
-            Check.Require(dbConnection.State == System.Data.ConnectionState.Open, "dbConnection is not open: " + dbConnection.State.ToString());
+            if (dbConnection == null)
+                throw new Exception("dbConnection is null");
+            if (dbConnection.State == System.Data.ConnectionState.Open)
+                throw new Exception("dbConnection is not open: " + dbConnection.State.ToString());
         }
 
         #region IDisposable Members
