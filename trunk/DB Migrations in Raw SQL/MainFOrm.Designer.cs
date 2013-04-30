@@ -49,14 +49,14 @@
             this.txtShortName.Location = new System.Drawing.Point(47, 210);
             this.txtShortName.Name = "txtShortName";
             this.txtShortName.Size = new System.Drawing.Size(219, 20);
-            this.txtShortName.TabIndex = 2;
+            this.txtShortName.TabIndex = 1;
             // 
             // btnCreateNewFile
             // 
             this.btnCreateNewFile.Location = new System.Drawing.Point(61, 161);
             this.btnCreateNewFile.Name = "btnCreateNewFile";
             this.btnCreateNewFile.Size = new System.Drawing.Size(170, 23);
-            this.btnCreateNewFile.TabIndex = 3;
+            this.btnCreateNewFile.TabIndex = 2;
             this.btnCreateNewFile.Text = "Create New Migration File";
             this.btnCreateNewFile.UseVisualStyleBackColor = true;
             this.btnCreateNewFile.Click += new System.EventHandler(this.btnCreateNewFile_Click);
@@ -66,7 +66,7 @@
             this.btnRunMigrations.Location = new System.Drawing.Point(69, 83);
             this.btnRunMigrations.Name = "btnRunMigrations";
             this.btnRunMigrations.Size = new System.Drawing.Size(170, 23);
-            this.btnRunMigrations.TabIndex = 4;
+            this.btnRunMigrations.TabIndex = 3;
             this.btnRunMigrations.Text = "Run Migrations";
             this.btnRunMigrations.UseVisualStyleBackColor = true;
             this.btnRunMigrations.Click += new System.EventHandler(this.btnRunMigrations_Click);
@@ -96,7 +96,7 @@
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtLog.Size = new System.Drawing.Size(567, 106);
-            this.txtLog.TabIndex = 7;
+            this.txtLog.TabIndex = 5;
             // 
             // textBox3
             // 
@@ -107,6 +107,7 @@
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(219, 84);
             this.textBox3.TabIndex = 8;
+            this.textBox3.TabStop = false;
             this.textBox3.Text = resources.GetString("textBox3.Text");
             // 
             // label1
@@ -127,7 +128,8 @@
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(219, 46);
-            this.textBox1.TabIndex = 10;
+            this.textBox1.TabIndex = 20;
+            this.textBox1.TabStop = false;
             this.textBox1.Text = "To get your local database up to date with all the latest scripts, click this but" +
     "ton and the app will do the rest.";
             // 
@@ -146,7 +148,7 @@
             this.groupBox1.Location = new System.Drawing.Point(12, 75);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(291, 195);
-            this.groupBox1.TabIndex = 12;
+            this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "New Migration File";
             // 
@@ -158,7 +160,7 @@
             this.groupBox2.Location = new System.Drawing.Point(323, 75);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(291, 195);
-            this.groupBox2.TabIndex = 13;
+            this.groupBox2.TabIndex = 2;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Run Migrations";
             // 
@@ -167,7 +169,7 @@
             this.btnExit.Location = new System.Drawing.Point(271, 399);
             this.btnExit.Name = "btnExit";
             this.btnExit.Size = new System.Drawing.Size(75, 23);
-            this.btnExit.TabIndex = 14;
+            this.btnExit.TabIndex = 4;
             this.btnExit.Text = "Exit";
             this.btnExit.UseVisualStyleBackColor = true;
             this.btnExit.Click += new System.EventHandler(this.btnExit_Click);
