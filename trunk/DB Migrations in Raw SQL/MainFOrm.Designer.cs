@@ -95,7 +95,7 @@
             this.txtLog.Name = "txtLog";
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(567, 106);
+            this.txtLog.Size = new System.Drawing.Size(567, 324);
             this.txtLog.TabIndex = 5;
             // 
             // textBox3
@@ -166,7 +166,7 @@
             // 
             // btnExit
             // 
-            this.btnExit.Location = new System.Drawing.Point(271, 399);
+            this.btnExit.Location = new System.Drawing.Point(285, 622);
             this.btnExit.Name = "btnExit";
             this.btnExit.Size = new System.Drawing.Size(75, 23);
             this.btnExit.TabIndex = 4;
@@ -187,7 +187,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(628, 433);
+            this.ClientSize = new System.Drawing.Size(628, 657);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.lblWebConfigPath);
             this.Controls.Add(this.btnExit);
