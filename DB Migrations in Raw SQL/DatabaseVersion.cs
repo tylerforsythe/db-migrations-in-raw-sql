@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Data.SqlClient;
 using System.IO;
@@ -28,6 +29,7 @@ namespace DB_Migrations_in_Raw_SQL
 
             for (int i=0; i < fileLines.Length; ++i) {
                 string line = fileLines[i];
+                line = ReplaceTokens(line);
                 if (line.ToUpper().Trim() == "GO" || i == fileLines.Length - 1) {
                     try {
                         if (i == fileLines.Length - 1)
@@ -37,7 +39,7 @@ namespace DB_Migrations_in_Raw_SQL
                             continue;
                         }
                         SqlCommand command = dbConnection.CreateCommand();
-                        command.CommandTimeout = 20 * 60;//10 minute timeout per chunk of script
+                        command.CommandTimeout = 20 * 60;
                         //command.Transaction = transaction;
                         command.CommandType = System.Data.CommandType.Text;
                         command.CommandText = sb.ToString() + Environment.NewLine + Environment.NewLine;
@@ -60,6 +62,11 @@ namespace DB_Migrations_in_Raw_SQL
             //transaction.Commit();
 
             return resultString.ToString();
+        }
+
+        private string ReplaceTokens(string line) {
+            string pathOfExe = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            return line.Replace("$(EXE_RELATIVEPATH)", pathOfExe);
         }
 
         private void SaveExecutionToDBVersionTable(string scriptPath) {
@@ -127,7 +134,7 @@ namespace DB_Migrations_in_Raw_SQL
         private void EnsureDbConnection() {
             if (dbConnection == null)
                 throw new Exception("dbConnection is null");
-            if (dbConnection.State == System.Data.ConnectionState.Open)
+            if (dbConnection.State != System.Data.ConnectionState.Open)
                 throw new Exception("dbConnection is not open: " + dbConnection.State.ToString());
         }
 
