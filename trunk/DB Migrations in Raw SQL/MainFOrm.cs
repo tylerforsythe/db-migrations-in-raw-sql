@@ -9,24 +9,30 @@ using System.Reflection;
 
 namespace DB_Migrations_in_Raw_SQL
 {
+    using System.Configuration;
+
+    using log4net;
+    using log4net.Config;
+
     public partial class MainForm : Form
     {
-        string WebConfigPath = string.Empty;
-        bool ValidDB = false;
-        bool ForceClose = false;
+        private string WebConfigPath = string.Empty;
+
+        private bool ValidDB = false;
+
+        private string connectionString = string.Empty;
+
+        private bool ForceClose = false;
+
+        private ILog log;
 
         public MainForm(string[] args) {
             InitializeComponent();
+            XmlConfigurator.Configure();
 
-            WebConfigPath = FindWebConfig(args);
-            if (string.IsNullOrEmpty(WebConfigPath)) {
-                lblWebConfigPath.Text = "Web.config file not found!";
-                ValidDB = false;
-            }
-            else {
-                lblWebConfigPath.Text = "Web.config file path: " + WebConfigPath;
-                ValidDB = true;
-            }
+            log = LogManager.GetLogger("SQL DB Migrations");
+
+            InitializeApplication(args);
 
             if (args != null && args.Length > 0) {
                 foreach (string arg in args) {
@@ -36,12 +42,47 @@ namespace DB_Migrations_in_Raw_SQL
                 }
             }
         }
+
         protected override void OnShown(EventArgs e) {
             base.OnShown(e);
             if (ForceClose) {
                 Close();
                 Application.Exit();
             }
+        }
+
+        private void InitializeApplication(string[] args)
+        {
+            this.connectionString = this.GetConnectionString(args);
+        }
+
+        private string GetConnectionString(string[] args)
+        {
+            if (ConfigurationManager.ConnectionStrings["connectionString"] != null)
+            {
+                var conn = ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString;
+
+                if (!string.IsNullOrEmpty(conn))
+                {
+                    this.AddLogLine("Found app.config connection string");
+                    ValidDB = true;
+                    return conn;
+                }
+            }
+
+            WebConfigPath = FindWebConfig(args);
+
+            if (string.IsNullOrEmpty(WebConfigPath))
+            {
+                lblWebConfigPath.Text = "Web.config file not found!";
+                ValidDB = false;
+                return string.Empty;
+            }
+
+            this.lblWebConfigPath.Text = "Web.config file path: " + this.WebConfigPath;
+            this.ValidDB = true;
+
+            return this.GetConnectionStringFromWebConfigAtPath(WebConfigPath);
         }
 
         private string FindWebConfig(string[] args) {
@@ -81,14 +122,25 @@ namespace DB_Migrations_in_Raw_SQL
 
             AddLogLine("Up to: " + currentPath);
             string[] webPaths = Directory.GetDirectories(currentPath, "*.Web");
-            if (webPaths != null && webPaths.Length > 0)
+            if (webPaths.Length > 0) {
                 return webPaths[0];
-            else
-                return SeekUpUntilPathOrLimit(currentPath, --limitCount);
+            } 
+            
+            if (webPaths.Length <= 0)
+            {
+                webPaths = Directory.GetDirectories(currentPath, "*.Web.Mvc");
+
+                if (webPaths.Length > 0)
+                    return webPaths[0];
+            }
+
+            return SeekUpUntilPathOrLimit(currentPath, --limitCount);
         }
 
         private void AddLogLine(string text) {
             txtLog.Text += Environment.NewLine + text;
+
+            log.Info(text);
         }
 
         private void btnExit_Click(object sender, EventArgs e) {
@@ -104,24 +156,23 @@ namespace DB_Migrations_in_Raw_SQL
                 txtLog.Text = "Invalid web.config path!";
                 return;
             }
+
             DatabaseVersion dbVersion = new DatabaseVersion();
 
-            //read connecting string information from web.config
-            string connectionString = GetConnectionStringFromWebConfigAtPath(WebConfigPath);
-            //make connection to database
+            // make connection to database
             dbVersion.ConnectToDatabase(connectionString);
 
-            //does DatabaseVersion table exist?
+            // does DatabaseVersion table exist?
             if (!dbVersion.DoesTableExist()) //if not, create it
                 dbVersion.CreateTable();
 
-            //read all database scripts from file system
+            // read all database scripts from file system
             List<string> scriptsFromFileSystem = ReadScriptListFromFileSystem();
 
-            //form new list of all scripts form filesystem that do not appear in DB table
+            // form new list of all scripts form filesystem that do not appear in DB table
             List<string> scriptsToRun = dbVersion.WhichScriptsHaveNotBeenRun(scriptsFromFileSystem);
 
-            //order scripts sequentially
+            // order scripts sequentially
             scriptsToRun.Sort();
 
             if (scriptsToRun.Count == 0) {
@@ -135,7 +186,7 @@ namespace DB_Migrations_in_Raw_SQL
                     return;
             }
 
-            //confirm list with user and ask before executing!
+            // confirm list with user and ask before executing!
             bool shouldContinue = false;
             if (silent) {
                 shouldContinue = true;
@@ -146,13 +197,14 @@ namespace DB_Migrations_in_Raw_SQL
                 foreach (string scriptName in scriptsToRun)
                     sb.AppendLine(scriptName);
                 DialogResult result = MessageBox.Show(sb.ToString(), "", MessageBoxButtons.YesNo);
-                shouldContinue = (result == System.Windows.Forms.DialogResult.Yes);
+                shouldContinue = result == System.Windows.Forms.DialogResult.Yes;
             }
 
             if (shouldContinue) {
                 progressBarMigrations.Value = 0;
                 progressBarMigrations.Maximum = scriptsToRun.Count;
-                //execute scripts until complete or error
+
+                // execute scripts until complete or error
                 foreach (string scriptPath in scriptsToRun) {
                     bool success = true;
                     Exception whatWeGot = null;
