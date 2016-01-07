@@ -11,9 +11,6 @@ namespace DB_Migrations_in_Raw_SQL
 {
     using System.Configuration;
 
-    using log4net;
-    using log4net.Config;
-
     public partial class MainForm : Form
     {
         private string WebConfigPath = string.Empty;
@@ -24,13 +21,8 @@ namespace DB_Migrations_in_Raw_SQL
 
         private bool ForceClose = false;
 
-        private ILog log;
-
         public MainForm(string[] args) {
             InitializeComponent();
-            XmlConfigurator.Configure();
-
-            log = LogManager.GetLogger("SQL DB Migrations");
 
             InitializeApplication(args);
 
@@ -58,12 +50,10 @@ namespace DB_Migrations_in_Raw_SQL
 
         private string GetConnectionString(string[] args)
         {
-            if (ConfigurationManager.ConnectionStrings["connectionString"] != null)
-            {
+            if (ConfigurationManager.ConnectionStrings["connectionString"] != null) {
                 var conn = ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString;
 
-                if (!string.IsNullOrEmpty(conn))
-                {
+                if (!string.IsNullOrEmpty(conn)) {
                     this.AddLogLine("Found app.config connection string");
                     ValidDB = true;
                     return conn;
@@ -116,9 +106,11 @@ namespace DB_Migrations_in_Raw_SQL
         private string SeekUpUntilPathOrLimit(string currentPath, int limitCount) {
             if (limitCount <= 0)
                 return string.Empty;
-            currentPath = Path.GetDirectoryName(currentPath);
-            if (string.IsNullOrEmpty(currentPath))//we ran out of directories--abort!
-                return string.Empty;
+
+            var files = Directory.GetFiles(currentPath, "Web.config");
+            if (files.Length > 0) {
+                return currentPath;
+            }
 
             AddLogLine("Up to: " + currentPath);
             string[] webPaths = Directory.GetDirectories(currentPath, "*.Web");
@@ -126,13 +118,16 @@ namespace DB_Migrations_in_Raw_SQL
                 return webPaths[0];
             } 
             
-            if (webPaths.Length <= 0)
-            {
+            if (webPaths.Length <= 0) {
                 webPaths = Directory.GetDirectories(currentPath, "*.Web.Mvc");
 
                 if (webPaths.Length > 0)
                     return webPaths[0];
             }
+
+            currentPath = Path.GetDirectoryName(currentPath);
+            if (string.IsNullOrEmpty(currentPath))//we ran out of directories--abort!
+                return string.Empty;
 
             return SeekUpUntilPathOrLimit(currentPath, --limitCount);
         }
@@ -140,7 +135,7 @@ namespace DB_Migrations_in_Raw_SQL
         private void AddLogLine(string text) {
             txtLog.Text += Environment.NewLine + text;
 
-            log.Info(text);
+            //log.Info(text); // Here's where we can turn on outputting to a text file if desired.
         }
 
         private void btnExit_Click(object sender, EventArgs e) {
