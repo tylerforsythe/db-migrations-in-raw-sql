@@ -1,0 +1,8 @@
+﻿USE DbMigrationsInRawSqlTestDb;
+
+CREATE TABLE TestLog (
+Id INT NOT NULL PRIMARY KEY IDENTITY (1,1),
+Msg VARCHAR(500) NOT NULL,
+NumberTest DECIMAL NULL
+)
+

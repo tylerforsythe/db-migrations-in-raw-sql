@@ -83,6 +83,11 @@ namespace DB_Migrations_in_Raw_SQL
                         if (File.Exists(checkPath)) {
                             return checkPath;
                         }
+
+                        var full = Path.GetFullPath(checkPath);
+                        if (File.Exists(full)) {
+                            return full;
+                        }
                     }
                 }
             }
@@ -201,22 +206,33 @@ namespace DB_Migrations_in_Raw_SQL
 
                 // execute scripts until complete or error
                 foreach (string scriptPath in scriptsToRun) {
+                    ScriptRunResult fileSuccess = null;
                     bool success = true;
                     Exception whatWeGot = null;
-                    txtLog.Text += string.Format("Executing {0}{1}", scriptPath, Environment.NewLine);
+                    txtLog.Text += string.Format("Executing {0}{1}", Path.GetFileName(scriptPath), Environment.NewLine);
                     try {
-                        dbVersion.ExecuteScriptFileAtPath(scriptPath);
+                        fileSuccess = dbVersion.ExecuteScriptFileAtPath(scriptPath);
                     }
                     catch (Exception ex) {
                         success = false;
                         whatWeGot = ex;
                     }
+
+                    if (fileSuccess == null)
+                        success = false;
+
+                    if (success)
+                        success = fileSuccess.WasSuccessful;
+
                     if (success) {
-                        txtLog.Text += string.Format("Success!{0}", Environment.NewLine);
+                        txtLog.Text += string.Format("Success!{0}{0}", Environment.NewLine);
                     }
                     else {
-                        txtLog.Text += string.Format("FAILED ON {1}!{0}", Environment.NewLine, scriptPath);
-                        txtLog.Text += string.Format("Exception details: {1} {2} {0}", Environment.NewLine, whatWeGot.Message, whatWeGot.StackTrace);
+                        txtLog.Text += $"{Environment.NewLine}{Environment.NewLine}FAILED ON: {Path.GetFileName(scriptPath)}{Environment.NewLine}{Environment.NewLine}";
+                        if (fileSuccess != null)
+                            txtLog.Text += $"{fileSuccess.ResultString}";
+                        else
+                            txtLog.Text += "No failure message returned!";
                         dbVersion.Dispose();
                         return;
                     }
@@ -236,6 +252,11 @@ namespace DB_Migrations_in_Raw_SQL
         private List<string> ReadScriptListFromFileSystem() {
             string thisPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string[] files = Directory.GetFiles(thisPath, "*.sql");
+
+            // for testing
+            if (files.Length == 0)
+                files = Directory.GetFiles(Path.Combine(thisPath, "TestScripts"), "*.sql");
+
             return files.ToList<string>();
         }
 

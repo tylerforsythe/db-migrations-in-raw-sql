@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<connectionStrings>
+		<add name="connectionString" connectionString="Data Source=DB_NAME;User ID=USER_NAME;Password=PASSWORD_HERE;Database=DbMigrationsInRawSqlTestDb;" providerName="System.Data.SqlClient" />
+	</connectionStrings>
+</configuration>

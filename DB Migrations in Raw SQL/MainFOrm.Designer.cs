@@ -90,12 +90,15 @@
             // txtLog
             // 
             this.txtLog.AcceptsReturn = true;
+            this.txtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.txtLog.Location = new System.Drawing.Point(47, 284);
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(567, 324);
+            this.txtLog.Size = new System.Drawing.Size(567, 361);
             this.txtLog.TabIndex = 5;
             // 
             // textBox3
@@ -166,7 +169,7 @@
             // 
             // btnExit
             // 
-            this.btnExit.Location = new System.Drawing.Point(285, 622);
+            this.btnExit.Location = new System.Drawing.Point(539, 12);
             this.btnExit.Name = "btnExit";
             this.btnExit.Size = new System.Drawing.Size(75, 23);
             this.btnExit.TabIndex = 4;

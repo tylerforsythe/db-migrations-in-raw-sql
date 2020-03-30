@@ -18,50 +18,79 @@ namespace DB_Migrations_in_Raw_SQL
             dbConnection.Open();
         }
 
-        public string ExecuteScriptFileAtPath(string scriptPath) {
+        public ScriptRunResult ExecuteScriptFileAtPath(string scriptPath) {
+            var wasSuccessful = true;
             EnsureDbConnection();
             StringBuilder resultString = new StringBuilder(500);
             //wrap each script in a transaction.
             //SqlTransaction transaction = dbConnection.BeginTransaction();
 
-            string[] fileLines = File.ReadAllLines(scriptPath);
-            StringBuilder sb = new StringBuilder(2000);
+            var allText = File.ReadAllText(scriptPath);
+            allText = ReplaceTokens(allText);
 
-            for (int i=0; i < fileLines.Length; ++i) {
-                string line = fileLines[i];
-                line = ReplaceTokens(line);
-                if (line.ToUpper().Trim() == "GO" || i == fileLines.Length - 1) {
-                    try {
-                        if (i == fileLines.Length - 1)
-                            sb.AppendLine(line);
-                        if (sb.ToString().Trim().Length == 0) {
-                            sb.Clear();
-                            continue;
-                        }
-                        SqlCommand command = dbConnection.CreateCommand();
-                        command.CommandTimeout = 20 * 60;
-                        //command.Transaction = transaction;
-                        command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = sb.ToString() + Environment.NewLine + Environment.NewLine;
-                        int resultCount = command.ExecuteNonQuery();
-                        resultString.AppendLine(string.Format("{0} rows affected.", resultCount));
-                    }
-                    catch (Exception e) {
-                        //transaction.Rollback();
-                        Exception ex = new Exception(sb.ToString() + " ----- " + e.Message);
-                        throw ex;
-                    }
-                    sb.Clear();
-                }
-                else {
-                    sb.AppendLine(line);
-                }
+            var transaction = dbConnection.BeginTransaction();
+
+            try {
+                SqlCommand command = dbConnection.CreateCommand();
+                command.CommandTimeout = 20 * 60;
+                command.Transaction = transaction;
+                command.CommandType = System.Data.CommandType.Text;
+                command.CommandText = allText;
+                int resultCount = command.ExecuteNonQuery();
+                resultString.AppendLine(string.Format("{0} rows affected.", resultCount));
+
+                transaction.Commit();
+                
+                SaveExecutionToDBVersionTable(scriptPath);
+            }
+            catch (Exception e) {
+                wasSuccessful = false;
+                transaction.Rollback();
+                resultString.AppendLine($"{e.Message}{Environment.NewLine}{e.StackTrace}");
             }
 
-            SaveExecutionToDBVersionTable(scriptPath);
+
+            //string[] fileLines = File.ReadAllLines(scriptPath);
+            //StringBuilder sb = new StringBuilder(2000);
+
+            //for (int i=0; i < fileLines.Length; ++i) {
+            //    string line = fileLines[i];
+            //    line = ReplaceTokens(line);
+            //    if (line.ToUpper().Trim() == "GO" || i == fileLines.Length - 1) {
+            //        try {
+            //            if (i == fileLines.Length - 1)
+            //                sb.AppendLine(line);
+            //            if (sb.ToString().Trim().Length == 0) {
+            //                sb.Clear();
+            //                continue;
+            //            }
+            //            SqlCommand command = dbConnection.CreateCommand();
+            //            command.CommandTimeout = 20 * 60;
+            //            //command.Transaction = transaction;
+            //            command.CommandType = System.Data.CommandType.Text;
+            //            command.CommandText = sb.ToString() + Environment.NewLine + Environment.NewLine;
+            //            int resultCount = command.ExecuteNonQuery();
+            //            resultString.AppendLine(string.Format("{0} rows affected.", resultCount));
+            //        }
+            //        catch (Exception e) {
+            //            //transaction.Rollback();
+            //            Exception ex = new Exception(sb.ToString() + " ----- " + e.Message);
+            //            throw ex;
+            //        }
+            //        sb.Clear();
+            //    }
+            //    else {
+            //        sb.AppendLine(line);
+            //    }
+            //}
+
             //transaction.Commit();
 
-            return resultString.ToString();
+            var resultObj = new ScriptRunResult();
+            resultObj.ResultString = resultString.ToString();
+            resultObj.WasSuccessful = wasSuccessful;
+
+            return resultObj;
         }
 
         private string ReplaceTokens(string line) {
