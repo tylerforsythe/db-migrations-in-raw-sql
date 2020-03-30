@@ -10,12 +10,12 @@ namespace DB_Migrations_in_Raw_SQL
 {
     public class DatabaseVersion : IDisposable
     {
-        SqlConnection dbConnection = null;
+        private SqlConnection _dbConnection = null;
 
 
         public void ConnectToDatabase(string connectionString) {
-            dbConnection = new SqlConnection(connectionString);
-            dbConnection.Open();
+            _dbConnection = new SqlConnection(connectionString);
+            _dbConnection.Open();
         }
 
         public ScriptRunResult ExecuteScriptFileAtPath(string scriptPath) {
@@ -25,13 +25,25 @@ namespace DB_Migrations_in_Raw_SQL
             //wrap each script in a transaction.
             //SqlTransaction transaction = dbConnection.BeginTransaction();
 
-            var allText = File.ReadAllText(scriptPath);
+            var allText = "";
+            var allLines = File.ReadAllLines(scriptPath);
+            foreach (var l in allLines) {
+                if (l.ToLowerInvariant() == "go") {
+                    resultString.AppendLine("File appears to use the 'GO' statement, which is not T-SQL! I will instead run with a ; (semicolon) instead. If you get an error, please eliminate this GO statement.");
+                    allText += $"{Environment.NewLine};";
+                }
+                else {
+                    allText += $"{Environment.NewLine}{l}";
+                }
+            }
+
+            //var allText = File.ReadAllText(scriptPath);
             allText = ReplaceTokens(allText);
 
-            var transaction = dbConnection.BeginTransaction();
+            var transaction = _dbConnection.BeginTransaction();
 
             try {
-                SqlCommand command = dbConnection.CreateCommand();
+                SqlCommand command = _dbConnection.CreateCommand();
                 command.CommandTimeout = 20 * 60;
                 command.Transaction = transaction;
                 command.CommandType = System.Data.CommandType.Text;
@@ -99,7 +111,7 @@ namespace DB_Migrations_in_Raw_SQL
         }
 
         private void SaveExecutionToDBVersionTable(string scriptPath) {
-            SqlCommand versionCommand = dbConnection.CreateCommand();
+            SqlCommand versionCommand = _dbConnection.CreateCommand();
             //versionCommand.Transaction = transaction;
             versionCommand.CommandType = System.Data.CommandType.Text;
             versionCommand.CommandText = string.Format(
@@ -116,7 +128,7 @@ namespace DB_Migrations_in_Raw_SQL
             EnsureDbConnection();
 
             string tableExistQuery = Resources.ReadResource("DoesTableExist.sql");
-            SqlCommand command = dbConnection.CreateCommand();
+            SqlCommand command = _dbConnection.CreateCommand();
             command.CommandType = System.Data.CommandType.Text;
             command.CommandText = tableExistQuery;
             object rawResult = command.ExecuteScalar();
@@ -132,7 +144,7 @@ namespace DB_Migrations_in_Raw_SQL
             EnsureDbConnection();
 
             string tableCreateQuery = Resources.ReadResource("CreateTable.sql");
-            SqlCommand command = dbConnection.CreateCommand();
+            SqlCommand command = _dbConnection.CreateCommand();
             command.CommandType = System.Data.CommandType.Text;
             command.CommandText = tableCreateQuery;
             command.ExecuteNonQuery();
@@ -147,7 +159,7 @@ namespace DB_Migrations_in_Raw_SQL
 
             foreach (string scriptName in fullListOfPotentials) {
                 string tableExistQuery = Resources.ReadResource("HasScriptBeenRun.sql");
-                SqlCommand command = dbConnection.CreateCommand();
+                SqlCommand command = _dbConnection.CreateCommand();
                 command.CommandType = System.Data.CommandType.Text;
                 command.CommandText = string.Format(tableExistQuery, Path.GetFileName(scriptName));
                 object rawResult = command.ExecuteScalar();
@@ -161,18 +173,18 @@ namespace DB_Migrations_in_Raw_SQL
 
 
         private void EnsureDbConnection() {
-            if (dbConnection == null)
+            if (_dbConnection == null)
                 throw new Exception("dbConnection is null");
-            if (dbConnection.State != System.Data.ConnectionState.Open)
-                throw new Exception("dbConnection is not open: " + dbConnection.State.ToString());
+            if (_dbConnection.State != System.Data.ConnectionState.Open)
+                throw new Exception("dbConnection is not open: " + _dbConnection.State.ToString());
         }
 
         #region IDisposable Members
 
         public void Dispose() {
-            if (dbConnection != null) {
+            if (_dbConnection != null) {
                 try {
-                    dbConnection.Close();
+                    _dbConnection.Close();
                 }
                 catch (Exception e) {
                     throw e;

@@ -226,6 +226,8 @@ namespace DB_Migrations_in_Raw_SQL
 
                     if (success) {
                         txtLog.Text += string.Format("Success!{0}{0}", Environment.NewLine);
+                        if (fileSuccess != null && !string.IsNullOrEmpty(fileSuccess.ResultString))
+                            txtLog.Text += $"{fileSuccess.ResultString}";
                     }
                     else {
                         txtLog.Text += $"{Environment.NewLine}{Environment.NewLine}FAILED ON: {Path.GetFileName(scriptPath)}{Environment.NewLine}{Environment.NewLine}";
