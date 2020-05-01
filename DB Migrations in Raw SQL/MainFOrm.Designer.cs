@@ -40,6 +40,7 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.btnExit = new System.Windows.Forms.Button();
             this.lblWebConfigPath = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -93,12 +94,12 @@
             this.txtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLog.Location = new System.Drawing.Point(47, 284);
+            this.txtLog.Location = new System.Drawing.Point(47, 316);
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(567, 361);
+            this.txtLog.Size = new System.Drawing.Size(567, 375);
             this.txtLog.TabIndex = 5;
             // 
             // textBox3
@@ -139,7 +140,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(13, 284);
+            this.label2.Location = new System.Drawing.Point(9, 319);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(28, 13);
             this.label2.TabIndex = 11;
@@ -186,11 +187,23 @@
             this.lblWebConfigPath.TabIndex = 15;
             this.lblWebConfigPath.Text = "Web.Config Path: ";
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label4.ForeColor = System.Drawing.Color.Red;
+            this.label4.Location = new System.Drawing.Point(98, 281);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(423, 24);
+            this.label4.TabIndex = 16;
+            this.label4.Text = "\"GO\" is not a valid T-SQL instruction! Use \";\"";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(628, 657);
+            this.ClientSize = new System.Drawing.Size(628, 703);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.lblWebConfigPath);
             this.Controls.Add(this.btnExit);
@@ -227,6 +240,7 @@
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Button btnExit;
         private System.Windows.Forms.Label lblWebConfigPath;
+        private System.Windows.Forms.Label label4;
     }
 }
 
